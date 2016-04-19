@@ -1,4 +1,5 @@
 import {combineReducers} from 'redux';
+import {reducer as formReducer} from 'redux-form';
 
 const initialModalState = {
   modalType: null,
@@ -20,7 +21,8 @@ function modal(state = initialModalState, action) {
 }
 
 const rootReducer = combineReducers({
-  modal
+  modal,
+  form: formReducer
 });
 
 export default rootReducer;

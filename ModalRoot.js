@@ -1,5 +1,5 @@
 import React, {PropTypes} from 'react';
-import ModalComponent from './ModalComponent';
+import AddAccountModal from './ModalComponent';
 import {connect} from 'react-redux';
 
 /*
@@ -7,8 +7,7 @@ import {connect} from 'react-redux';
  */
 
 const MODAL_COMPONENTS = {
-  'ADD_ACCOUNT': ModalComponent
-  /* TODO other modals */
+  'ADD_ACCOUNT': AddAccountModal
 };
 
 const ModalRoot = ({modalType, modalProps, dispatch}) => {
@@ -23,7 +22,8 @@ const ModalRoot = ({modalType, modalProps, dispatch}) => {
       type: 'HIDE_MODAL'
     });
   };
-  const fullProps = Object.assign({closeFn}, modalProps);
+  const handleSubmit = () => {};
+  const fullProps = Object.assign({closeFn, handleSubmit}, modalProps);
   return <SpecificModal {...fullProps} />;
 };
 
