@@ -1,8 +1,8 @@
 import React from 'react';
 import {render} from 'react-dom';
-import ModalComponent from './ModalComponent';
+import Root from './Root';
 
 render(
-  <ModalComponent />,
+  <Root />,
   document.getElementById('root')
 );
