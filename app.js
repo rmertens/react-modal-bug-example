@@ -20072,11 +20072,11 @@
 
 	var _reactRedux = __webpack_require__(167);
 
-	var _configureStore = __webpack_require__(191);
+	var _configureStore = __webpack_require__(193);
 
 	var _configureStore2 = _interopRequireDefault(_configureStore);
 
-	var _Template = __webpack_require__(193);
+	var _Template = __webpack_require__(242);
 
 	var _Template2 = _interopRequireDefault(_Template);
 
@@ -20323,15 +20323,15 @@
 
 	var _warning2 = _interopRequireDefault(_warning);
 
-	var _isPlainObject = __webpack_require__(185);
+	var _isPlainObject = __webpack_require__(187);
 
 	var _isPlainObject2 = _interopRequireDefault(_isPlainObject);
 
-	var _hoistNonReactStatics = __webpack_require__(189);
+	var _hoistNonReactStatics = __webpack_require__(191);
 
 	var _hoistNonReactStatics2 = _interopRequireDefault(_hoistNonReactStatics);
 
-	var _invariant = __webpack_require__(190);
+	var _invariant = __webpack_require__(192);
 
 	var _invariant2 = _interopRequireDefault(_invariant);
 
@@ -20768,23 +20768,23 @@
 
 	var _createStore2 = _interopRequireDefault(_createStore);
 
-	var _combineReducers = __webpack_require__(180);
+	var _combineReducers = __webpack_require__(182);
 
 	var _combineReducers2 = _interopRequireDefault(_combineReducers);
 
-	var _bindActionCreators = __webpack_require__(182);
+	var _bindActionCreators = __webpack_require__(184);
 
 	var _bindActionCreators2 = _interopRequireDefault(_bindActionCreators);
 
-	var _applyMiddleware = __webpack_require__(183);
+	var _applyMiddleware = __webpack_require__(185);
 
 	var _applyMiddleware2 = _interopRequireDefault(_applyMiddleware);
 
-	var _compose = __webpack_require__(184);
+	var _compose = __webpack_require__(186);
 
 	var _compose2 = _interopRequireDefault(_compose);
 
-	var _warning = __webpack_require__(181);
+	var _warning = __webpack_require__(183);
 
 	var _warning2 = _interopRequireDefault(_warning);
 
@@ -20815,6 +20815,8 @@
 
 	'use strict';
 
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+
 	exports.__esModule = true;
 	exports.ActionTypes = undefined;
 	exports["default"] = createStore;
@@ -20822,6 +20824,10 @@
 	var _isPlainObject = __webpack_require__(176);
 
 	var _isPlainObject2 = _interopRequireDefault(_isPlainObject);
+
+	var _symbolObservable = __webpack_require__(180);
+
+	var _symbolObservable2 = _interopRequireDefault(_symbolObservable);
 
 	function _interopRequireDefault(obj) {
 	  return obj && obj.__esModule ? obj : { "default": obj };
@@ -20863,6 +20869,8 @@
 	 * and subscribe to changes.
 	 */
 	function createStore(reducer, initialState, enhancer) {
+	  var _ref2;
+
 	  if (typeof initialState === 'function' && typeof enhancer === 'undefined') {
 	    enhancer = initialState;
 	    initialState = undefined;
@@ -21019,17 +21027,57 @@
 	    dispatch({ type: ActionTypes.INIT });
 	  }
 
+	  /**
+	   * Interoperability point for observable/reactive libraries.
+	   * @returns {observable} A minimal observable of state changes.
+	   * For more information, see the observable proposal:
+	   * https://github.com/zenparsing/es-observable
+	   */
+	  function observable() {
+	    var _ref;
+
+	    var outerSubscribe = subscribe;
+	    return _ref = {
+	      /**
+	       * The minimal observable subscription method.
+	       * @param {Object} observer Any object that can be used as an observer.
+	       * The observer object should have a `next` method.
+	       * @returns {subscription} An object with an `unsubscribe` method that can
+	       * be used to unsubscribe the observable from the store, and prevent further
+	       * emission of values from the observable.
+	       */
+
+	      subscribe: function subscribe(observer) {
+	        if ((typeof observer === 'undefined' ? 'undefined' : _typeof(observer)) !== 'object') {
+	          throw new TypeError('Expected the observer to be an object.');
+	        }
+
+	        function observeState() {
+	          if (observer.next) {
+	            observer.next(getState());
+	          }
+	        }
+
+	        observeState();
+	        var unsubscribe = outerSubscribe(observeState);
+	        return { unsubscribe: unsubscribe };
+	      }
+	    }, _ref[_symbolObservable2["default"]] = function () {
+	      return this;
+	    }, _ref;
+	  }
+
 	  // When a store is created, an "INIT" action is dispatched so that every
 	  // reducer returns their initial state. This effectively populates
 	  // the initial state tree.
 	  dispatch({ type: ActionTypes.INIT });
 
-	  return {
+	  return _ref2 = {
 	    dispatch: dispatch,
 	    subscribe: subscribe,
 	    getState: getState,
 	    replaceReducer: replaceReducer
-	  };
+	  }, _ref2[_symbolObservable2["default"]] = observable, _ref2;
 	}
 
 /***/ },
@@ -21198,6 +21246,44 @@
 /* 180 */
 /***/ function(module, exports, __webpack_require__) {
 
+	/* WEBPACK VAR INJECTION */(function(global) {/* global window */
+	'use strict';
+
+	module.exports = __webpack_require__(181)(global || window || undefined);
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
+
+/***/ },
+/* 181 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	module.exports = function symbolObservablePonyfill(root) {
+		var result;
+		var _Symbol = root.Symbol;
+
+		if (typeof _Symbol === 'function') {
+			if (_Symbol.observable) {
+				result = _Symbol.observable;
+			} else {
+				if (typeof _Symbol.for === 'function') {
+					result = _Symbol.for('observable');
+				} else {
+					result = _Symbol('observable');
+				}
+				_Symbol.observable = result;
+			}
+		} else {
+			result = '@@observable';
+		}
+
+		return result;
+	};
+
+/***/ },
+/* 182 */
+/***/ function(module, exports, __webpack_require__) {
+
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
 
 	exports.__esModule = true;
@@ -21209,7 +21295,7 @@
 
 	var _isPlainObject2 = _interopRequireDefault(_isPlainObject);
 
-	var _warning = __webpack_require__(181);
+	var _warning = __webpack_require__(183);
 
 	var _warning2 = _interopRequireDefault(_warning);
 
@@ -21330,7 +21416,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
 
 /***/ },
-/* 181 */
+/* 183 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -21359,7 +21445,7 @@
 	}
 
 /***/ },
-/* 182 */
+/* 184 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -21417,7 +21503,7 @@
 	}
 
 /***/ },
-/* 183 */
+/* 185 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -21436,7 +21522,7 @@
 
 	exports["default"] = applyMiddleware;
 
-	var _compose = __webpack_require__(184);
+	var _compose = __webpack_require__(186);
 
 	var _compose2 = _interopRequireDefault(_compose);
 
@@ -21490,10 +21576,12 @@
 	}
 
 /***/ },
-/* 184 */
+/* 186 */
 /***/ function(module, exports) {
 
 	"use strict";
+
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
 	exports.__esModule = true;
 	exports["default"] = compose;
@@ -21513,29 +21601,36 @@
 	    funcs[_key] = arguments[_key];
 	  }
 
-	  return function () {
-	    if (funcs.length === 0) {
-	      return arguments.length <= 0 ? undefined : arguments[0];
-	    }
+	  if (funcs.length === 0) {
+	    return function (arg) {
+	      return arg;
+	    };
+	  } else {
+	    var _ret = function () {
+	      var last = funcs[funcs.length - 1];
+	      var rest = funcs.slice(0, -1);
+	      return {
+	        v: function v() {
+	          return rest.reduceRight(function (composed, f) {
+	            return f(composed);
+	          }, last.apply(undefined, arguments));
+	        }
+	      };
+	    }();
 
-	    var last = funcs[funcs.length - 1];
-	    var rest = funcs.slice(0, -1);
-
-	    return rest.reduceRight(function (composed, f) {
-	      return f(composed);
-	    }, last.apply(undefined, arguments));
-	  };
+	    if ((typeof _ret === "undefined" ? "undefined" : _typeof(_ret)) === "object") return _ret.v;
+	  }
 	}
 
 /***/ },
-/* 185 */
+/* 187 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var getPrototype = __webpack_require__(186),
-	    isHostObject = __webpack_require__(187),
-	    isObjectLike = __webpack_require__(188);
+	var getPrototype = __webpack_require__(188),
+	    isHostObject = __webpack_require__(189),
+	    isObjectLike = __webpack_require__(190);
 
 	/** `Object#toString` result references. */
 	var objectTag = '[object Object]';
@@ -21603,7 +21698,7 @@
 	module.exports = isPlainObject;
 
 /***/ },
-/* 186 */
+/* 188 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -21625,7 +21720,7 @@
 	module.exports = getPrototype;
 
 /***/ },
-/* 187 */
+/* 189 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -21652,7 +21747,7 @@
 	module.exports = isHostObject;
 
 /***/ },
-/* 188 */
+/* 190 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -21690,7 +21785,7 @@
 	module.exports = isObjectLike;
 
 /***/ },
-/* 189 */
+/* 191 */
 /***/ function(module, exports) {
 
 	/**
@@ -21733,7 +21828,7 @@
 	};
 
 /***/ },
-/* 190 */
+/* 192 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -21787,7 +21882,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
 
 /***/ },
-/* 191 */
+/* 193 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -21799,7 +21894,7 @@
 
 	var _redux = __webpack_require__(174);
 
-	var _reducers = __webpack_require__(192);
+	var _reducers = __webpack_require__(194);
 
 	var _reducers2 = _interopRequireDefault(_reducers);
 
@@ -21810,7 +21905,7 @@
 	};
 
 /***/ },
-/* 192 */
+/* 194 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -21821,7 +21916,7 @@
 
 	var _redux = __webpack_require__(174);
 
-	var _reduxForm = __webpack_require__(196);
+	var _reduxForm = __webpack_require__(195);
 
 	var initialModalState = {
 	  modalType: null,
@@ -21853,228 +21948,7 @@
 	exports.default = rootReducer;
 
 /***/ },
-/* 193 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	var _react = __webpack_require__(1);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _reactDom = __webpack_require__(32);
-
-	var _reactRedux = __webpack_require__(167);
-
-	var _ModalRoot = __webpack_require__(194);
-
-	var _ModalRoot2 = _interopRequireDefault(_ModalRoot);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	var Template = function (_Component) {
-	  _inherits(Template, _Component);
-
-	  function Template() {
-	    _classCallCheck(this, Template);
-
-	    return _possibleConstructorReturn(this, Object.getPrototypeOf(Template).apply(this, arguments));
-	  }
-
-	  _createClass(Template, [{
-	    key: 'open',
-	    value: function open() {
-	      this.props.dispatch({
-	        type: 'SHOW_MODAL',
-	        modalType: 'ADD_ACCOUNT',
-	        modalProps: {}
-	      });
-	    }
-	  }, {
-	    key: 'render',
-	    value: function render() {
-
-	      return _react2.default.createElement(
-	        'span',
-	        null,
-	        _react2.default.createElement(_ModalRoot2.default, null),
-	        _react2.default.createElement(
-	          'span',
-	          null,
-	          'Not open',
-	          _react2.default.createElement(
-	            'button',
-	            { onClick: this.open.bind(this) },
-	            'open'
-	          )
-	        )
-	      );
-	    }
-	  }]);
-
-	  return Template;
-	}(_react.Component);
-
-	exports.default = (0, _reactRedux.connect)()(Template);
-
-/***/ },
-/* 194 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	var _react = __webpack_require__(1);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _ModalComponent = __webpack_require__(195);
-
-	var _ModalComponent2 = _interopRequireDefault(_ModalComponent);
-
-	var _reactRedux = __webpack_require__(167);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	/*
-	 * Following http://stackoverflow.com/questions/35623656/how-can-i-display-a-modal-dialog-in-redux-that-performs-asynchronous-actions/35641680
-	 */
-
-	var MODAL_COMPONENTS = {
-	  'ADD_ACCOUNT': _ModalComponent2.default
-	};
-
-	var ModalRoot = function ModalRoot(_ref) {
-	  var modalType = _ref.modalType;
-	  var modalProps = _ref.modalProps;
-	  var dispatch = _ref.dispatch;
-
-	  if (!modalType) {
-	    return null;
-	  }
-
-	  var SpecificModal = MODAL_COMPONENTS[modalType];
-	  var closeFn = function closeFn() {
-	    console.log('closeFn called');
-	    dispatch({
-	      type: 'HIDE_MODAL'
-	    });
-	  };
-	  var handleSubmit = function handleSubmit() {};
-	  var fullProps = Object.assign({ closeFn: closeFn, handleSubmit: handleSubmit }, modalProps);
-	  return _react2.default.createElement(SpecificModal, fullProps);
-	};
-
-	ModalRoot.propTypes = {
-	  modalType: _react.PropTypes.string,
-	  modalProps: _react.PropTypes.object,
-	  dispatch: _react.PropTypes.func.isRequired
-	};
-
-	exports.default = (0, _reactRedux.connect)(function (state) {
-	  return state.modal;
-	})(ModalRoot);
-
-/***/ },
 /* 195 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.fields = undefined;
-
-	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-	var _react = __webpack_require__(1);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _reduxForm = __webpack_require__(196);
-
-	var _reactModal = __webpack_require__(243);
-
-	var _reactModal2 = _interopRequireDefault(_reactModal);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	var fields = exports.fields = ['bank', 'universe'];
-
-	var AddAccountModal = function AddAccountModal(_ref) {
-	  var closeFn = _ref.closeFn;
-	  var handleSubmit = _ref.handleSubmit;
-	  var bank = _ref.fields.bank;
-
-	  return _react2.default.createElement(
-	    _reactModal2.default,
-	    {
-	      isOpen: true,
-	      onRequestClosed: closeFn
-	    },
-	    _react2.default.createElement(
-	      'p',
-	      null,
-	      _react2.default.createElement(
-	        'form',
-	        { onSubmit: handleSubmit },
-	        _react2.default.createElement(
-	          'select',
-	          _extends({}, bank, {
-	            // required syntax for reset form to work
-	            // undefined will not change value to first empty option
-	            // when resetting
-	            value: bank.value || '' }),
-	          _react2.default.createElement(
-	            'option',
-	            { value: '0' },
-	            ' '
-	          ),
-	          _react2.default.createElement(
-	            'option',
-	            { value: '1' },
-	            'Option 1'
-	          )
-	        )
-	      )
-	    ),
-	    _react2.default.createElement(
-	      'button',
-	      { onClick: closeFn },
-	      'close'
-	    )
-	  );
-	};
-
-	AddAccountModal.propTypes = {
-	  closeFn: _react.PropTypes.func.isRequired,
-	  fields: _react.PropTypes.object.isRequired,
-	  handleSubmit: _react.PropTypes.func.isRequired
-	};
-
-	exports.default = (0, _reduxForm.reduxForm)({
-	  form: 'add_account',
-	  fields: fields
-	})(AddAccountModal);
-
-/***/ },
-/* 196 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -22088,7 +21962,7 @@
 
 	var _reactRedux = __webpack_require__(167);
 
-	var _createAll2 = __webpack_require__(197);
+	var _createAll2 = __webpack_require__(196);
 
 	var _createAll3 = _interopRequireDefault(_createAll2);
 
@@ -22150,7 +22024,7 @@
 	exports.untouchWithKey = untouchWithKey;
 
 /***/ },
-/* 197 */
+/* 196 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -22169,35 +22043,35 @@
 
 	exports.default = createAll;
 
-	var _reducer = __webpack_require__(198);
+	var _reducer = __webpack_require__(197);
 
 	var _reducer2 = _interopRequireDefault(_reducer);
 
-	var _createReduxForm = __webpack_require__(209);
+	var _createReduxForm = __webpack_require__(208);
 
 	var _createReduxForm2 = _interopRequireDefault(_createReduxForm);
 
-	var _mapValues = __webpack_require__(200);
+	var _mapValues = __webpack_require__(199);
 
 	var _mapValues2 = _interopRequireDefault(_mapValues);
 
-	var _bindActionData = __webpack_require__(219);
+	var _bindActionData = __webpack_require__(218);
 
 	var _bindActionData2 = _interopRequireDefault(_bindActionData);
 
-	var _actions = __webpack_require__(218);
+	var _actions = __webpack_require__(217);
 
 	var actions = _interopRequireWildcard(_actions);
 
-	var _actionTypes = __webpack_require__(199);
+	var _actionTypes = __webpack_require__(198);
 
 	var actionTypes = _interopRequireWildcard(_actionTypes);
 
-	var _createPropTypes = __webpack_require__(242);
+	var _createPropTypes = __webpack_require__(241);
 
 	var _createPropTypes2 = _interopRequireDefault(_createPropTypes);
 
-	var _getValuesFromState = __webpack_require__(203);
+	var _getValuesFromState = __webpack_require__(202);
 
 	var _getValuesFromState2 = _interopRequireDefault(_getValuesFromState);
 
@@ -22315,7 +22189,7 @@
 	}
 
 /***/ },
-/* 198 */
+/* 197 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -22337,39 +22211,39 @@
 
 	var _initialState, _behaviors;
 
-	var _actionTypes = __webpack_require__(199);
+	var _actionTypes = __webpack_require__(198);
 
-	var _mapValues = __webpack_require__(200);
+	var _mapValues = __webpack_require__(199);
 
 	var _mapValues2 = _interopRequireDefault(_mapValues);
 
-	var _read = __webpack_require__(201);
+	var _read = __webpack_require__(200);
 
 	var _read2 = _interopRequireDefault(_read);
 
-	var _write = __webpack_require__(202);
+	var _write = __webpack_require__(201);
 
 	var _write2 = _interopRequireDefault(_write);
 
-	var _getValuesFromState = __webpack_require__(203);
+	var _getValuesFromState = __webpack_require__(202);
 
 	var _getValuesFromState2 = _interopRequireDefault(_getValuesFromState);
 
-	var _initializeState = __webpack_require__(205);
+	var _initializeState = __webpack_require__(204);
 
 	var _initializeState2 = _interopRequireDefault(_initializeState);
 
-	var _resetState = __webpack_require__(206);
+	var _resetState = __webpack_require__(205);
 
 	var _resetState2 = _interopRequireDefault(_resetState);
 
-	var _setErrors = __webpack_require__(207);
+	var _setErrors = __webpack_require__(206);
 
 	var _setErrors2 = _interopRequireDefault(_setErrors);
 
-	var _fieldValue = __webpack_require__(204);
+	var _fieldValue = __webpack_require__(203);
 
-	var _normalizeFields = __webpack_require__(208);
+	var _normalizeFields = __webpack_require__(207);
 
 	var _normalizeFields2 = _interopRequireDefault(_normalizeFields);
 
@@ -22650,7 +22524,7 @@
 	exports.default = decorate(formReducer);
 
 /***/ },
-/* 199 */
+/* 198 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -22674,7 +22548,7 @@
 	var UNTOUCH = exports.UNTOUCH = 'redux-form/UNTOUCH';
 
 /***/ },
-/* 200 */
+/* 199 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -22704,7 +22578,7 @@
 	}
 
 /***/ },
-/* 201 */
+/* 200 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -22750,7 +22624,7 @@
 	exports.default = read;
 
 /***/ },
-/* 202 */
+/* 201 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -22866,7 +22740,7 @@
 	exports.default = write;
 
 /***/ },
-/* 203 */
+/* 202 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -22875,7 +22749,7 @@
 
 	exports.__esModule = true;
 
-	var _fieldValue = __webpack_require__(204);
+	var _fieldValue = __webpack_require__(203);
 
 	/**
 	 * A different version of getValues() that does not need the fields array
@@ -22914,7 +22788,7 @@
 	exports.default = getValuesFromState;
 
 /***/ },
-/* 204 */
+/* 203 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -22941,7 +22815,7 @@
 	}
 
 /***/ },
-/* 205 */
+/* 204 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -22958,7 +22832,7 @@
 	  }return target;
 	};
 
-	var _fieldValue = __webpack_require__(204);
+	var _fieldValue = __webpack_require__(203);
 
 	var makeEntry = function makeEntry(value) {
 	  return (0, _fieldValue.makeFieldValue)(value === undefined ? {} : { initial: value, value: value });
@@ -23026,7 +22900,7 @@
 	exports.default = initializeState;
 
 /***/ },
-/* 206 */
+/* 205 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -23035,7 +22909,7 @@
 
 	exports.__esModule = true;
 
-	var _fieldValue = __webpack_require__(204);
+	var _fieldValue = __webpack_require__(203);
 
 	var reset = function reset(value) {
 	  return (0, _fieldValue.makeFieldValue)(value === undefined || value && value.initial === undefined ? {} : { initial: value.initial, value: value.initial });
@@ -23067,7 +22941,7 @@
 	exports.default = resetState;
 
 /***/ },
-/* 207 */
+/* 206 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -23086,7 +22960,7 @@
 	  }return target;
 	};
 
-	var _fieldValue = __webpack_require__(204);
+	var _fieldValue = __webpack_require__(203);
 
 	var isMetaKey = function isMetaKey(key) {
 	  return key[0] === '_';
@@ -23168,7 +23042,7 @@
 	exports.default = setErrors;
 
 /***/ },
-/* 208 */
+/* 207 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -23189,7 +23063,7 @@
 
 	exports.default = normalizeFields;
 
-	var _fieldValue = __webpack_require__(204);
+	var _fieldValue = __webpack_require__(203);
 
 	function extractKey(field) {
 	  var dotIndex = field.indexOf('.');
@@ -23275,7 +23149,7 @@
 	}
 
 /***/ },
-/* 209 */
+/* 208 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -23294,11 +23168,11 @@
 	  }return target;
 	};
 
-	var _createReduxFormConnector = __webpack_require__(210);
+	var _createReduxFormConnector = __webpack_require__(209);
 
 	var _createReduxFormConnector2 = _interopRequireDefault(_createReduxFormConnector);
 
-	var _hoistNonReactStatics = __webpack_require__(189);
+	var _hoistNonReactStatics = __webpack_require__(191);
 
 	var _hoistNonReactStatics2 = _interopRequireDefault(_hoistNonReactStatics);
 
@@ -23372,7 +23246,7 @@
 	exports.default = createReduxForm;
 
 /***/ },
-/* 210 */
+/* 209 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -23381,15 +23255,15 @@
 
 	exports.__esModule = true;
 
-	var _noGetters = __webpack_require__(211);
+	var _noGetters = __webpack_require__(210);
 
 	var _noGetters2 = _interopRequireDefault(_noGetters);
 
-	var _getDisplayName = __webpack_require__(216);
+	var _getDisplayName = __webpack_require__(215);
 
 	var _getDisplayName2 = _interopRequireDefault(_getDisplayName);
 
-	var _createHigherOrderComponent = __webpack_require__(217);
+	var _createHigherOrderComponent = __webpack_require__(216);
 
 	var _createHigherOrderComponent2 = _interopRequireDefault(_createHigherOrderComponent);
 
@@ -23496,15 +23370,15 @@
 	exports.default = createReduxFormConnector;
 
 /***/ },
-/* 211 */
+/* 210 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(212);
+	module.exports = __webpack_require__(211);
 
 /***/ },
-/* 212 */
+/* 211 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -23531,7 +23405,7 @@
 	  }
 	}
 
-	var _deepEqual = __webpack_require__(213);
+	var _deepEqual = __webpack_require__(212);
 
 	var _deepEqual2 = _interopRequireDefault(_deepEqual);
 
@@ -23613,7 +23487,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 213 */
+/* 212 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -23621,8 +23495,8 @@
 	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
 	var pSlice = Array.prototype.slice;
-	var objectKeys = __webpack_require__(214);
-	var isArguments = __webpack_require__(215);
+	var objectKeys = __webpack_require__(213);
+	var isArguments = __webpack_require__(214);
 
 	var deepEqual = module.exports = function (actual, expected, opts) {
 	  if (!opts) opts = {};
@@ -23713,7 +23587,7 @@
 	}
 
 /***/ },
-/* 214 */
+/* 213 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -23729,7 +23603,7 @@
 	}
 
 /***/ },
-/* 215 */
+/* 214 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -23753,7 +23627,7 @@
 	};
 
 /***/ },
-/* 216 */
+/* 215 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -23765,7 +23639,7 @@
 	}
 
 /***/ },
-/* 217 */
+/* 216 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -23784,57 +23658,57 @@
 	  }return target;
 	};
 
-	var _actions = __webpack_require__(218);
+	var _actions = __webpack_require__(217);
 
 	var importedActions = _interopRequireWildcard(_actions);
 
-	var _getDisplayName = __webpack_require__(216);
+	var _getDisplayName = __webpack_require__(215);
 
 	var _getDisplayName2 = _interopRequireDefault(_getDisplayName);
 
-	var _reducer = __webpack_require__(198);
+	var _reducer = __webpack_require__(197);
 
-	var _deepEqual = __webpack_require__(213);
+	var _deepEqual = __webpack_require__(212);
 
 	var _deepEqual2 = _interopRequireDefault(_deepEqual);
 
-	var _bindActionData = __webpack_require__(219);
+	var _bindActionData = __webpack_require__(218);
 
 	var _bindActionData2 = _interopRequireDefault(_bindActionData);
 
-	var _getValues = __webpack_require__(220);
+	var _getValues = __webpack_require__(219);
 
 	var _getValues2 = _interopRequireDefault(_getValues);
 
-	var _isValid = __webpack_require__(221);
+	var _isValid = __webpack_require__(220);
 
 	var _isValid2 = _interopRequireDefault(_isValid);
 
-	var _readFields = __webpack_require__(222);
+	var _readFields = __webpack_require__(221);
 
 	var _readFields2 = _interopRequireDefault(_readFields);
 
-	var _handleSubmit2 = __webpack_require__(236);
+	var _handleSubmit2 = __webpack_require__(235);
 
 	var _handleSubmit3 = _interopRequireDefault(_handleSubmit2);
 
-	var _asyncValidation = __webpack_require__(237);
+	var _asyncValidation = __webpack_require__(236);
 
 	var _asyncValidation2 = _interopRequireDefault(_asyncValidation);
 
-	var _silenceEvents = __webpack_require__(238);
+	var _silenceEvents = __webpack_require__(237);
 
 	var _silenceEvents2 = _interopRequireDefault(_silenceEvents);
 
-	var _silenceEvent = __webpack_require__(239);
+	var _silenceEvent = __webpack_require__(238);
 
 	var _silenceEvent2 = _interopRequireDefault(_silenceEvent);
 
-	var _wrapMapDispatchToProps = __webpack_require__(240);
+	var _wrapMapDispatchToProps = __webpack_require__(239);
 
 	var _wrapMapDispatchToProps2 = _interopRequireDefault(_wrapMapDispatchToProps);
 
-	var _wrapMapStateToProps = __webpack_require__(241);
+	var _wrapMapStateToProps = __webpack_require__(240);
 
 	var _wrapMapStateToProps2 = _interopRequireDefault(_wrapMapStateToProps);
 
@@ -24166,7 +24040,7 @@
 	exports.default = createHigherOrderComponent;
 
 /***/ },
-/* 218 */
+/* 217 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -24174,7 +24048,7 @@
 	exports.__esModule = true;
 	exports.untouch = exports.touch = exports.swapArrayValues = exports.submitFailed = exports.stopSubmit = exports.stopAsyncValidation = exports.startSubmit = exports.startAsyncValidation = exports.reset = exports.removeArrayValue = exports.initialize = exports.focus = exports.destroy = exports.change = exports.blur = exports.addArrayValue = undefined;
 
-	var _actionTypes = __webpack_require__(199);
+	var _actionTypes = __webpack_require__(198);
 
 	var addArrayValue = exports.addArrayValue = function addArrayValue(path, value, index, fields) {
 	  return { type: _actionTypes.ADD_ARRAY_VALUE, path: path, value: value, index: index, fields: fields };
@@ -24252,7 +24126,7 @@
 	};
 
 /***/ },
-/* 219 */
+/* 218 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -24273,7 +24147,7 @@
 
 	exports.default = bindActionData;
 
-	var _mapValues = __webpack_require__(200);
+	var _mapValues = __webpack_require__(199);
 
 	var _mapValues2 = _interopRequireDefault(_mapValues);
 
@@ -24299,7 +24173,7 @@
 	}
 
 /***/ },
-/* 220 */
+/* 219 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -24360,7 +24234,7 @@
 	exports.default = getValues;
 
 /***/ },
-/* 221 */
+/* 220 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -24384,7 +24258,7 @@
 	}
 
 /***/ },
-/* 222 */
+/* 221 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -24401,19 +24275,19 @@
 	  }return target;
 	};
 
-	var _readField = __webpack_require__(223);
+	var _readField = __webpack_require__(222);
 
 	var _readField2 = _interopRequireDefault(_readField);
 
-	var _write = __webpack_require__(202);
+	var _write = __webpack_require__(201);
 
 	var _write2 = _interopRequireDefault(_write);
 
-	var _getValues = __webpack_require__(220);
+	var _getValues = __webpack_require__(219);
 
 	var _getValues2 = _interopRequireDefault(_getValues);
 
-	var _removeField = __webpack_require__(235);
+	var _removeField = __webpack_require__(234);
 
 	var _removeField2 = _interopRequireDefault(_removeField);
 
@@ -24465,7 +24339,7 @@
 	exports.default = readFields;
 
 /***/ },
-/* 223 */
+/* 222 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -24484,35 +24358,35 @@
 	  }return target;
 	};
 
-	var _createOnBlur = __webpack_require__(224);
+	var _createOnBlur = __webpack_require__(223);
 
 	var _createOnBlur2 = _interopRequireDefault(_createOnBlur);
 
-	var _createOnChange = __webpack_require__(227);
+	var _createOnChange = __webpack_require__(226);
 
 	var _createOnChange2 = _interopRequireDefault(_createOnChange);
 
-	var _createOnDragStart = __webpack_require__(228);
+	var _createOnDragStart = __webpack_require__(227);
 
 	var _createOnDragStart2 = _interopRequireDefault(_createOnDragStart);
 
-	var _createOnDrop = __webpack_require__(229);
+	var _createOnDrop = __webpack_require__(228);
 
 	var _createOnDrop2 = _interopRequireDefault(_createOnDrop);
 
-	var _createOnFocus = __webpack_require__(230);
+	var _createOnFocus = __webpack_require__(229);
 
 	var _createOnFocus2 = _interopRequireDefault(_createOnFocus);
 
-	var _silencePromise = __webpack_require__(231);
+	var _silencePromise = __webpack_require__(230);
 
 	var _silencePromise2 = _interopRequireDefault(_silencePromise);
 
-	var _read = __webpack_require__(201);
+	var _read = __webpack_require__(200);
 
 	var _read2 = _interopRequireDefault(_read);
 
-	var _updateField = __webpack_require__(233);
+	var _updateField = __webpack_require__(232);
 
 	var _updateField2 = _interopRequireDefault(_updateField);
 
@@ -24689,14 +24563,14 @@
 	exports.default = readField;
 
 /***/ },
-/* 224 */
+/* 223 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _getValue = __webpack_require__(225);
+	var _getValue = __webpack_require__(224);
 
 	var _getValue2 = _interopRequireDefault(_getValue);
 
@@ -24716,7 +24590,7 @@
 	exports.default = createOnBlur;
 
 /***/ },
-/* 225 */
+/* 224 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -24725,7 +24599,7 @@
 
 	exports.__esModule = true;
 
-	var _isEvent = __webpack_require__(226);
+	var _isEvent = __webpack_require__(225);
 
 	var _isEvent2 = _interopRequireDefault(_isEvent);
 
@@ -24780,7 +24654,7 @@
 	exports.default = getValue;
 
 /***/ },
-/* 226 */
+/* 225 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -24793,14 +24667,14 @@
 	exports.default = isEvent;
 
 /***/ },
-/* 227 */
+/* 226 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _getValue = __webpack_require__(225);
+	var _getValue = __webpack_require__(224);
 
 	var _getValue2 = _interopRequireDefault(_getValue);
 
@@ -24816,7 +24690,7 @@
 	exports.default = createOnChange;
 
 /***/ },
-/* 228 */
+/* 227 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -24832,14 +24706,14 @@
 	exports.default = createOnDragStart;
 
 /***/ },
-/* 229 */
+/* 228 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _createOnDragStart = __webpack_require__(228);
+	var _createOnDragStart = __webpack_require__(227);
 
 	var createOnDrop = function createOnDrop(name, change) {
 	  return function (event) {
@@ -24849,7 +24723,7 @@
 	exports.default = createOnDrop;
 
 /***/ },
-/* 230 */
+/* 229 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -24863,14 +24737,14 @@
 	exports.default = createOnFocus;
 
 /***/ },
-/* 231 */
+/* 230 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _isPromise = __webpack_require__(232);
+	var _isPromise = __webpack_require__(231);
 
 	var _isPromise2 = _interopRequireDefault(_isPromise);
 
@@ -24889,7 +24763,7 @@
 	exports.default = silencePromise;
 
 /***/ },
-/* 232 */
+/* 231 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -24903,7 +24777,7 @@
 	}
 
 /***/ },
-/* 233 */
+/* 232 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -24920,11 +24794,11 @@
 	  }return target;
 	};
 
-	var _isPristine = __webpack_require__(234);
+	var _isPristine = __webpack_require__(233);
 
 	var _isPristine2 = _interopRequireDefault(_isPristine);
 
-	var _isValid = __webpack_require__(221);
+	var _isValid = __webpack_require__(220);
 
 	var _isValid2 = _interopRequireDefault(_isValid);
 
@@ -24984,7 +24858,7 @@
 	exports.default = updateField;
 
 /***/ },
-/* 234 */
+/* 233 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -25024,7 +24898,7 @@
 	}
 
 /***/ },
-/* 235 */
+/* 234 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -25114,18 +24988,18 @@
 	exports.default = removeField;
 
 /***/ },
-/* 236 */
+/* 235 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _isPromise = __webpack_require__(232);
+	var _isPromise = __webpack_require__(231);
 
 	var _isPromise2 = _interopRequireDefault(_isPromise);
 
-	var _isValid = __webpack_require__(221);
+	var _isValid = __webpack_require__(220);
 
 	var _isValid2 = _interopRequireDefault(_isValid);
 
@@ -25195,18 +25069,18 @@
 	exports.default = handleSubmit;
 
 /***/ },
-/* 237 */
+/* 236 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _isPromise = __webpack_require__(232);
+	var _isPromise = __webpack_require__(231);
 
 	var _isPromise2 = _interopRequireDefault(_isPromise);
 
-	var _isValid = __webpack_require__(221);
+	var _isValid = __webpack_require__(220);
 
 	var _isValid2 = _interopRequireDefault(_isValid);
 
@@ -25239,14 +25113,14 @@
 	exports.default = asyncValidation;
 
 /***/ },
-/* 238 */
+/* 237 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _silenceEvent = __webpack_require__(239);
+	var _silenceEvent = __webpack_require__(238);
 
 	var _silenceEvent2 = _interopRequireDefault(_silenceEvent);
 
@@ -25267,14 +25141,14 @@
 	exports.default = silenceEvents;
 
 /***/ },
-/* 239 */
+/* 238 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _isEvent = __webpack_require__(226);
+	var _isEvent = __webpack_require__(225);
 
 	var _isEvent2 = _interopRequireDefault(_isEvent);
 
@@ -25293,7 +25167,7 @@
 	exports.default = silenceEvent;
 
 /***/ },
-/* 240 */
+/* 239 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -25344,7 +25218,7 @@
 	exports.default = wrapMapDispatchToProps;
 
 /***/ },
-/* 241 */
+/* 240 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -25389,7 +25263,7 @@
 	exports.default = wrapMapStateToProps;
 
 /***/ },
-/* 242 */
+/* 241 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -25434,27 +25308,248 @@
 	exports.default = createPropTypes;
 
 /***/ },
+/* 242 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _reactDom = __webpack_require__(32);
+
+	var _reactRedux = __webpack_require__(167);
+
+	var _ModalRoot = __webpack_require__(243);
+
+	var _ModalRoot2 = _interopRequireDefault(_ModalRoot);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var Template = function (_Component) {
+	  _inherits(Template, _Component);
+
+	  function Template() {
+	    _classCallCheck(this, Template);
+
+	    return _possibleConstructorReturn(this, Object.getPrototypeOf(Template).apply(this, arguments));
+	  }
+
+	  _createClass(Template, [{
+	    key: 'open',
+	    value: function open() {
+	      this.props.dispatch({
+	        type: 'SHOW_MODAL',
+	        modalType: 'ADD_ACCOUNT',
+	        modalProps: {}
+	      });
+	    }
+	  }, {
+	    key: 'render',
+	    value: function render() {
+
+	      return _react2.default.createElement(
+	        'span',
+	        null,
+	        _react2.default.createElement(_ModalRoot2.default, null),
+	        _react2.default.createElement(
+	          'span',
+	          null,
+	          'Not open',
+	          _react2.default.createElement(
+	            'button',
+	            { onClick: this.open.bind(this) },
+	            'open'
+	          )
+	        )
+	      );
+	    }
+	  }]);
+
+	  return Template;
+	}(_react.Component);
+
+	exports.default = (0, _reactRedux.connect)()(Template);
+
+/***/ },
 /* 243 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(244);
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _ModalComponent = __webpack_require__(244);
+
+	var _ModalComponent2 = _interopRequireDefault(_ModalComponent);
+
+	var _reactRedux = __webpack_require__(167);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	/*
+	 * Following http://stackoverflow.com/questions/35623656/how-can-i-display-a-modal-dialog-in-redux-that-performs-asynchronous-actions/35641680
+	 */
+
+	var MODAL_COMPONENTS = {
+	  'ADD_ACCOUNT': _ModalComponent2.default
+	};
+
+	var ModalRoot = function ModalRoot(_ref) {
+	  var modalType = _ref.modalType;
+	  var modalProps = _ref.modalProps;
+	  var dispatch = _ref.dispatch;
+
+	  if (!modalType) {
+	    return null;
+	  }
+
+	  var SpecificModal = MODAL_COMPONENTS[modalType];
+	  var closeFn = function closeFn() {
+	    console.log('closeFn called');
+	    dispatch({
+	      type: 'HIDE_MODAL'
+	    });
+	  };
+	  var handleSubmit = function handleSubmit() {};
+	  var fullProps = Object.assign({ closeFn: closeFn, handleSubmit: handleSubmit }, modalProps);
+	  return _react2.default.createElement(SpecificModal, fullProps);
+	};
+
+	ModalRoot.propTypes = {
+	  modalType: _react.PropTypes.string,
+	  modalProps: _react.PropTypes.object,
+	  dispatch: _react.PropTypes.func.isRequired
+	};
+
+	exports.default = (0, _reactRedux.connect)(function (state) {
+	  return state.modal;
+	})(ModalRoot);
 
 /***/ },
 /* 244 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.fields = undefined;
+
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _reduxForm = __webpack_require__(195);
+
+	var _reactModal = __webpack_require__(245);
+
+	var _reactModal2 = _interopRequireDefault(_reactModal);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	var fields = exports.fields = ['bank', 'universe'];
+
+	var AddAccountModal = function AddAccountModal(_ref) {
+	  var closeFn = _ref.closeFn;
+	  var handleSubmit = _ref.handleSubmit;
+	  var bank = _ref.fields.bank;
+
+	  return _react2.default.createElement(
+	    _reactModal2.default,
+	    {
+	      isOpen: true,
+	      onRequestClosed: closeFn
+	    },
+	    _react2.default.createElement(
+	      'p',
+	      null,
+	      _react2.default.createElement(
+	        'form',
+	        { onSubmit: handleSubmit },
+	        _react2.default.createElement(
+	          'select',
+	          _extends({}, bank, {
+	            // required syntax for reset form to work
+	            // undefined will not change value to first empty option
+	            // when resetting
+	            value: bank.value || '' }),
+	          _react2.default.createElement(
+	            'option',
+	            { value: '0' },
+	            ' '
+	          ),
+	          _react2.default.createElement(
+	            'option',
+	            { value: '1' },
+	            'Option 1'
+	          )
+	        )
+	      )
+	    ),
+	    _react2.default.createElement(
+	      'button',
+	      { onClick: closeFn },
+	      'close'
+	    )
+	  );
+	};
+
+	AddAccountModal.propTypes = {
+	  closeFn: _react.PropTypes.func.isRequired,
+	  fields: _react.PropTypes.object.isRequired,
+	  handleSubmit: _react.PropTypes.func.isRequired
+	};
+
+	exports.default = (0, _reduxForm.reduxForm)({
+	  form: 'add_account',
+	  fields: fields
+	})(AddAccountModal);
+
+/***/ },
+/* 245 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	module.exports = __webpack_require__(246);
+
+/***/ },
+/* 246 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
 
 	var React = __webpack_require__(1);
 	var ReactDOM = __webpack_require__(32);
-	var ExecutionEnvironment = __webpack_require__(245);
-	var ModalPortal = React.createFactory(__webpack_require__(247));
-	var ariaAppHider = __webpack_require__(262);
-	var elementClass = __webpack_require__(263);
+	var ExecutionEnvironment = __webpack_require__(247);
+	var ModalPortal = React.createFactory(__webpack_require__(249));
+	var ariaAppHider = __webpack_require__(264);
+	var elementClass = __webpack_require__(265);
 	var renderSubtreeIntoContainer = __webpack_require__(32).unstable_renderSubtreeIntoContainer;
-	var Assign = __webpack_require__(251);
+	var Assign = __webpack_require__(253);
 
 	var SafeHTMLElement = ExecutionEnvironment.canUseDOM ? window.HTMLElement : {};
 	var AppElement = ExecutionEnvironment.canUseDOM ? document.body : { appendChild: function appendChild() {} };
@@ -25564,7 +25659,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
 
 /***/ },
-/* 245 */
+/* 247 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;'use strict';
@@ -25594,7 +25689,7 @@
 
 		};
 
-		if ("function" === 'function' && _typeof(__webpack_require__(246)) === 'object' && __webpack_require__(246)) {
+		if ("function" === 'function' && _typeof(__webpack_require__(248)) === 'object' && __webpack_require__(248)) {
 			!(__WEBPACK_AMD_DEFINE_RESULT__ = function () {
 				return ExecutionEnvironment;
 			}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
@@ -25606,7 +25701,7 @@
 	})();
 
 /***/ },
-/* 246 */
+/* 248 */
 /***/ function(module, exports) {
 
 	/* WEBPACK VAR INJECTION */(function(__webpack_amd_options__) {module.exports = __webpack_amd_options__;
@@ -25614,16 +25709,16 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, {}))
 
 /***/ },
-/* 247 */
+/* 249 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var React = __webpack_require__(1);
 	var div = React.DOM.div;
-	var focusManager = __webpack_require__(248);
-	var scopeTab = __webpack_require__(250);
-	var Assign = __webpack_require__(251);
+	var focusManager = __webpack_require__(250);
+	var scopeTab = __webpack_require__(252);
+	var Assign = __webpack_require__(253);
 
 	// so that our CSS is statically analyzable
 	var CLASS_NAMES = {
@@ -25791,12 +25886,12 @@
 	});
 
 /***/ },
-/* 248 */
+/* 250 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var findTabbable = __webpack_require__(249);
+	var findTabbable = __webpack_require__(251);
 	var modalElement = null;
 	var focusLaterElement = null;
 	var needToFocus = false;
@@ -25862,7 +25957,7 @@
 	};
 
 /***/ },
-/* 249 */
+/* 251 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -25913,12 +26008,12 @@
 	module.exports = findTabbableDescendants;
 
 /***/ },
-/* 250 */
+/* 252 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var findTabbable = __webpack_require__(249);
+	var findTabbable = __webpack_require__(251);
 
 	module.exports = function (node, event) {
 	  var tabbable = findTabbable(node);
@@ -25937,7 +26032,7 @@
 	};
 
 /***/ },
-/* 251 */
+/* 253 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -25950,9 +26045,9 @@
 	 * Copyright 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 	 * Available under MIT license <https://lodash.com/license>
 	 */
-	var baseAssign = __webpack_require__(252),
-	    createAssigner = __webpack_require__(258),
-	    keys = __webpack_require__(254);
+	var baseAssign = __webpack_require__(254),
+	    createAssigner = __webpack_require__(260),
+	    keys = __webpack_require__(256);
 
 	/**
 	 * A specialized version of `_.assign` for customizing assigned values without
@@ -26021,7 +26116,7 @@
 	module.exports = assign;
 
 /***/ },
-/* 252 */
+/* 254 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -26034,8 +26129,8 @@
 	 * Copyright 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 	 * Available under MIT license <https://lodash.com/license>
 	 */
-	var baseCopy = __webpack_require__(253),
-	    keys = __webpack_require__(254);
+	var baseCopy = __webpack_require__(255),
+	    keys = __webpack_require__(256);
 
 	/**
 	 * The base implementation of `_.assign` without support for argument juggling,
@@ -26053,7 +26148,7 @@
 	module.exports = baseAssign;
 
 /***/ },
-/* 253 */
+/* 255 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -26092,7 +26187,7 @@
 	module.exports = baseCopy;
 
 /***/ },
-/* 254 */
+/* 256 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -26107,9 +26202,9 @@
 	 * Copyright 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 	 * Available under MIT license <https://lodash.com/license>
 	 */
-	var getNative = __webpack_require__(255),
-	    isArguments = __webpack_require__(256),
-	    isArray = __webpack_require__(257);
+	var getNative = __webpack_require__(257),
+	    isArguments = __webpack_require__(258),
+	    isArray = __webpack_require__(259);
 
 	/** Used to detect unsigned integer values. */
 	var reIsUint = /^\d+$/;
@@ -26333,7 +26428,7 @@
 	module.exports = keys;
 
 /***/ },
-/* 255 */
+/* 257 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -26476,7 +26571,7 @@
 	module.exports = getNative;
 
 /***/ },
-/* 256 */
+/* 258 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -26726,7 +26821,7 @@
 	module.exports = isArguments;
 
 /***/ },
-/* 257 */
+/* 259 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -26912,7 +27007,7 @@
 	module.exports = isArray;
 
 /***/ },
-/* 258 */
+/* 260 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -26925,9 +27020,9 @@
 	 * Copyright 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 	 * Available under MIT license <https://lodash.com/license>
 	 */
-	var bindCallback = __webpack_require__(259),
-	    isIterateeCall = __webpack_require__(260),
-	    restParam = __webpack_require__(261);
+	var bindCallback = __webpack_require__(261),
+	    isIterateeCall = __webpack_require__(262),
+	    restParam = __webpack_require__(263);
 
 	/**
 	 * Creates a function that assigns properties of source object(s) to a given
@@ -26971,7 +27066,7 @@
 	module.exports = createAssigner;
 
 /***/ },
-/* 259 */
+/* 261 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -27047,7 +27142,7 @@
 	module.exports = bindCallback;
 
 /***/ },
-/* 260 */
+/* 262 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -27186,7 +27281,7 @@
 	module.exports = isIterateeCall;
 
 /***/ },
-/* 261 */
+/* 263 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -27263,7 +27358,7 @@
 	module.exports = restParam;
 
 /***/ },
-/* 262 */
+/* 264 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -27308,7 +27403,7 @@
 	exports.resetForTesting = resetForTesting;
 
 /***/ },
-/* 263 */
+/* 265 */
 /***/ function(module, exports) {
 
 	'use strict';
